@@ -5,7 +5,7 @@ import os
 
 # Load environment variables
 load_dotenv()
-stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+stripe.api_key = st.secrets['STRIPE_SECRET_KEY']
 
 st.set_page_config(page_title="Subscription Management", page_icon="��")
 

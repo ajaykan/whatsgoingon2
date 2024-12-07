@@ -35,16 +35,16 @@ def check_subscription(customer_id):
 load_dotenv()
 
 # Initialize Stripe with your secret key
-stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+stripe.api_key = st.secrets['STRIPE_SECRET_KEY']
 
 # Use other environment variables as needed
-price_id = os.getenv('STRIPE_PRICE_ID')
+price_id = st.secrets['STRIPE_PRICE_ID']
 
 # Near the top of your file, add a session state to track subscription
 if 'is_subscribed' not in st.session_state:
     st.session_state.is_subscribed = False  # Default to not subscribed
 
-st.title("WSB Trade Analysis")
+st.title("WhatsGoingOn")
 
 st.write("Helping WallStreetBettors lose money even faster")
 df = pd.read_json("post_data.json")
