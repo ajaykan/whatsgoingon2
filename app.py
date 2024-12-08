@@ -35,11 +35,7 @@ def check_subscription(customer_id):
 load_dotenv()
 
 # Initialize Stripe with your secret key
-try:
-    stripe.api_key = st.secrets["STRIPE_SECRET_KEY"]
-    print("Stripe API key loaded successfully")
-except Exception as e:
-    print(f"Failed to load Stripe API key: {e}")
+stripe.api_key = st.secrets["STRIPE_SECRET_KEY"]
 
 # Use other environment variables as needed
 price_id = st.secrets['STRIPE_PRICE_ID']
@@ -48,9 +44,9 @@ price_id = st.secrets['STRIPE_PRICE_ID']
 if 'is_subscribed' not in st.session_state:
     st.session_state.is_subscribed = False  # Default to not subscribed
 
-st.title("WhatsGoingOn")
+st.markdown("<h1 style='text-align: center'>WhatsGoingOn</h1>", unsafe_allow_html=True)
 
-st.write("Helping WallStreetBettors lose money even faster")
+st.markdown("<h4 style='text-align: center'>Helping WallStreetBettors lose money even faster</h4>", unsafe_allow_html=True)
 df = pd.read_json("post_data.json")
 sentiments = ['All'] + sorted(df['THESIS'].unique().tolist())
 selected_sentiment = st.selectbox('Filter by Sentiment:', sentiments)
@@ -97,23 +93,50 @@ def create_post_html(row):
 filtered_df = df if selected_sentiment == 'All' else df[df['THESIS'] == selected_sentiment]
 
 for idx, (_, row) in enumerate(filtered_df.iterrows()):
-    if idx < 2:  # First two posts are always shown
+    if idx < 2:  # First two posts are shown normally
         html_block = create_post_html(row)
         st.markdown(html_block, unsafe_allow_html=True)
-    elif st.session_state.is_subscribed:  # Show remaining posts only if subscribed
-        html_block = create_post_html(row)
+    elif idx == 2:  # Third post with gradient overlay
+        html_block = f"""
+        <div style="position: relative;">
+            {create_post_html(row)}
+            <div style="
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 100%;
+                background: linear-gradient(to bottom, 
+                    rgba(0,0,0,0) 0%,
+                    rgba(0,0,0,0.8) 60%,
+                    rgba(0,0,0,0.9) 100%);
+                pointer-events: none;
+            "></div>
+        </div>
+        """
         st.markdown(html_block, unsafe_allow_html=True)
-    elif idx == 2:  # Show paywall message after first two posts
+        
+        # Show paywall message after the faded post
+        st.markdown("""
+            <div style="
+                max-width: 1800px;
+                width: 100%;
+                border: 2px solid #374151;
+                border-radius: 0.5rem;
+                overflow: hidden;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                margin: 0.5rem auto;
+                padding: 2rem;
+                text-align: center;
+            ">
+                <h2 style="margin-bottom: 1rem;">🔒 Subscribe For All Posts</h2>
+                <p style="margin-bottom: 2rem;">Because LLMs are expensive...</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            st.markdown("""
-            <div style="width: 95%; border: 2px solid #374151; border-radius: 0.5rem; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); margin: 0.5rem auto; padding: 2rem; text-align: center;">
-                <h2 style="margin-bottom: 1rem;">🔒 Subscribe For All Posts</h2>
-                <p style="margin-bottom: 2rem;">LLMs are expensive...</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            if st.button("Subscribe - $5/month", key="subscribe-button", type="primary", use_container_width=True):
+            if st.button("Subscribe - $4.99/month", key="subscribe-button", type="primary", use_container_width=True):
                 try:
                     checkout_session = stripe.checkout.Session.create(
                         payment_method_types=['card'],
@@ -155,3 +178,24 @@ st.markdown("""
 col1, col2, col3 = st.columns([1, 6, 1])
 with col3:
     st.write("[Account](account)")
+
+# Add this disclaimer at the bottom of your app
+st.markdown("""
+    <div style="max-width: 1800px; margin: 2rem auto; padding: 1rem; border-top: 1px solid #374151; font-size: 0.8rem; color: #6B7280;">
+        <p style="margin-bottom: 0.5rem;"><strong>IMPORTANT FINANCIAL DISCLAIMER</strong></p>
+        <p>
+            The content on WhatsGoingOn is for informational purposes only. The posts and analysis shared here do not constitute financial advice, 
+            investment advice, trading advice, or any other sort of advice. All content is presented as-is from WallStreetBets and should be treated 
+            as high-risk entertainment rather than financial guidance.
+        </p>
+        <p style="margin-top: 0.5rem;">
+            Trading and investing in financial markets carries a high degree of risk, including the risk of losing some or all of your investment. 
+            Past performance is not indicative of future results. Any trades or investment decisions you make are at your own risk and discretion. 
+            Always conduct your own research and consult with a licensed financial advisor before making any investment decisions.
+        </p>
+        <p style="margin-top: 0.5rem;">
+            WhatsGoingOn and its operators do not guarantee accuracy of information and are not responsible for any losses incurred based on the 
+            content provided. Posts are often satirical in nature and should not be taken as serious financial recommendations.
+        </p>
+    </div>
+""", unsafe_allow_html=True)
