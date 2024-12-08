@@ -35,7 +35,11 @@ def check_subscription(customer_id):
 load_dotenv()
 
 # Initialize Stripe with your secret key
-stripe.api_key = st.secrets['STRIPE_SECRET_KEY']
+try:
+    stripe.api_key = st.secrets["STRIPE_SECRET_KEY"]
+    print("Stripe API key loaded successfully")
+except Exception as e:
+    print(f"Failed to load Stripe API key: {e}")
 
 # Use other environment variables as needed
 price_id = st.secrets['STRIPE_PRICE_ID']
@@ -106,37 +110,15 @@ for idx, (_, row) in enumerate(filtered_df.iterrows()):
             <div style="width: 95%; border: 2px solid #374151; border-radius: 0.5rem; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); margin: 0.5rem auto; padding: 2rem; text-align: center;">
                 <h2 style="margin-bottom: 1rem;">🔒 Subscribe For All Posts</h2>
                 <p style="margin-bottom: 2rem;">LLMs are expensive...</p>
-                <button 
-                    style="
-                        background-color: #1E40AF;
-                        color: white;
-                        padding: 0.75rem 1.5rem;
-                        border-radius: 0.5rem;
-                        border: none;
-                        font-weight: 600;
-                        cursor: pointer;
-                        transition: background-color 0.2s;
-                    "
-                    onclick="handleSubscribe()"
-                >
-                    Subscribe - $5/month
-                </button>
             </div>
-
-            <script>
-                function handleSubscribe() {
-                    document.getElementById('subscribe-button').click();
-                }
-            </script>
             """, unsafe_allow_html=True)
             
-            # Hidden button that Streamlit can handle
-            if st.button("Subscribe", key="subscribe-button", type="primary"):
+            if st.button("Subscribe - $5/month", key="subscribe-button", type="primary", use_container_width=True):
                 try:
                     checkout_session = stripe.checkout.Session.create(
                         payment_method_types=['card'],
                         line_items=[{
-                            'price': os.getenv('STRIPE_PRICE_ID'),
+                            'price': price_id,
                             'quantity': 1,
                         }],
                         mode='subscription',
@@ -144,11 +126,8 @@ for idx, (_, row) in enumerate(filtered_df.iterrows()):
                         cancel_url='https://your-domain.com/cancel',
                     )
                     
-                    st.markdown(f'''
-                        <script>
-                            window.location.href = '{checkout_session.url}';
-                        </script>
-                    ''', unsafe_allow_html=True)
+                    # Instead of JavaScript, use Streamlit's built-in link functionality
+                    st.link_button("Click here to complete your subscription", checkout_session.url)
                     
                 except Exception as e:
                     st.error(f"An error occurred: {str(e)}")
